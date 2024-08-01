@@ -1,52 +1,41 @@
-name: NodeJS with Gulp
+name: CI
 
-on:
-  push:
-    branches:
-      - '**'
+on: 
   pull_request:
-    branches:
-      - '**'
+    types: [opened]
+
 jobs:
-  build:
+  todo-fixme-comment:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install dependencies
-      run: yarn install
-
-    - name: Build
-      run: yarn run build
-    - name: Find Comment
-      uses: peter-evans/find-comment@v3
-      id: fc
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: 'github-actions[bot]'
-        body-includes: This comment was written by a bot!
-
-    - name: Create comment
-      if: steps.fc.outputs.comment-id == ''
-      uses: peter-evans/create-or-update-comment@v4
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        body: |
-          This comment was written by a bot!
-        reactions: rocket
-
-    - name: Update comment
-      if: steps.fc.outputs.comment-id != ''
-      uses: peter-evans/create-or-update-comment@v4
-      with:
-        comment-id: ${{ steps.fc.outputs.comment-id }}
-        body: |
-          This comment has been updated!
-        reactions: hooray
+      - name: checkout repository
+        uses: actions/checkout@v3
+      - name: get yarn cache directory path
+        id: yarn-cache
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - name: Setup cache key and directory for node_modules cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+      - name: yarn
+        run: yarn --frozen-lockfile
+      - id: find-pull-request
+        uses: jwalton/gh-find-current-pr@v1
+        with:
+          # Can be "open", "closed", or "all".  Defaults to "open".
+          state: open
+      - name: create TODO/FIXME comment body
+        id: comment-body
+        run: |
+          yarn todos --exit-nicely --reporter markdown > TODO.md
+          body="$(sed 1,2d TODO.md)"
+          body="${body//'%'/'%25'}"
+          body="${body//$'\n'/'%0A'}"
+          body="${body//$'\r'/'%0D'}" 
+          echo "::set-output name=body::$body"
+      - name: post TODO/FIXME comment to PR
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          issue-number: ${{ steps.find-pull-request.outputs.number }}
+          body: ${{ steps.comment-body.outputs.body }}   
