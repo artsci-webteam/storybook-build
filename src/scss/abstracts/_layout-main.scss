@@ -1,0 +1,24 @@
+aside .region,
+.layout-content .region {
+  padding: 0;
+  border: none;
+}
+
+.layout-container {
+  @include container-width;;
+}
+
+.page__container {
+  @include container-width;;
+
+  &--mixed {
+    @include container-width;;
+  }
+}
+
+.flex__wrapper {
+  @include breakpoint(sm) {
+    flex-wrap: wrap;
+    @include flexbox;
+  }
+}

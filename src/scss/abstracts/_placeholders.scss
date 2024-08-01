@@ -1,0 +1,27 @@
+// Placeholders
+// Adapted from https://alistapart.com/article/dry-ing-out-your-sass-mixins/
+// and https://github.com/at-import/toolkit
+$Research-Placeholders: () !default;
+
+@function research-placeholder-set($id) {
+  $unique-id: unique-id();
+  $Research-Placeholders: map-merge($Research-Placeholders, ($id: $unique-id)) !global;
+  @return $unique-id;
+}
+
+@function research-placeholder-get($id) {
+  @return map-get($Research-Placeholders, $id);
+}
+
+@mixin research-dynamic-extend($id) {
+  $placeholder-id: research-placeholder-get($id);
+
+  @if $placeholder-id == null {
+    $placeholder-id: research-placeholder-set($id);
+    @at-root %#{$placeholder-id} {
+      @content;
+    }
+  }
+
+  @extend %#{$placeholder-id};
+}
