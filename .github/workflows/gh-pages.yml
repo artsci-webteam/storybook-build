@@ -83,7 +83,7 @@ jobs:
 
       # https://github.com/actions/checkout#readme
       - name: Checkout docs
-        uses: actions/checkout@4
+        uses: actions/checkout@v3
         with:
           ref: gh-pages
           path: gh-pages
