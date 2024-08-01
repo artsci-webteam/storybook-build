@@ -91,7 +91,7 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           branch: gh-pages # Or your TARGET_BRANCH if needed
-          folder: _site
+          folder: www
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
