@@ -22,9 +22,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # This workflow contains a single job called "build"
   build:
+    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    # If the PR is coming from a fork (pull_request_target), ensure it's opened by "dependabot[bot]".
+    # Otherwise, clone it normally.
+    if: |
+      ! github.event.pull_request.draft &&
+      ((github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]') ||
+      (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]'))
+    env:
+      TARGET_BRANCH: gh-pages
+      MAIN_BRANCH: 4.x
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # https://github.com/actions/checkout#readme
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout 🛎️
         if: ${{ github.event_name != 'pull_request_target' }}
         uses: actions/checkout@v4
@@ -35,23 +50,32 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Set variables
+      - name: Set variables for main
+        if: |
+          github.event_name == 'push' &&
+          github.ref == format('refs/heads/{0}', env.MAIN_BRANCH)
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/4.x" ]]; then
-            echo "branch=latest" >> $GITHUB_ENV
-            echo "target_dir=/" >> $GITHUB_ENV
-          elif [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "pull_request_target" ]]; then
-            ref=${{ github.event.pull_request.head.ref }}
-            echo "branch=${ref//\//_}" >> $GITHUB_ENV
-            echo "target_dir=/branches/" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            ref=${{ github.ref }}
-            echo "branch=${ref#refs/*/}" >> $GITHUB_ENV
-            echo "target_dir=/docs/" >> $GITHUB_ENV
-          fi
+          echo "branch=latest" >> $GITHUB_ENV
+          echo "target_dir=/" >> $GITHUB_ENV
+
+      - name: Set variables for branches
+        if: |
+          github.event_name == 'pull_request' ||
+          github.event_name == 'pull_request_target'
+        run: |
+          ref=${{ github.event.pull_request.head.ref }}
+          echo "branch=${ref//\//_}" >> $GITHUB_ENV
+          echo "target_dir=/branches/" >> $GITHUB_ENV
+
+      - name: Set variables for tags
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          ref=${{ github.ref }}
+          echo "branch=${ref#refs/*/}" >> $GITHUB_ENV
+          echo "target_dir=/docs/" >> $GITHUB_ENV
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18.x'
 
@@ -61,34 +85,34 @@ jobs:
           corepack prepare yarn@1.22.22 --activate
           yarn set version 1.22.22
 
-      - name: Install dependencies
-        run: yarn install --immutable
+      - run: yarn install --immutable
+      - run: BASE_URL=$target_dir$branch/ yarn production
+      # Check to make sure that docs built into www.
+      - run: ls -lah $GITHUB_WORKSPACE/www
 
-      - name: Build with Yarn
-        run: BASE_URL=$target_dir$branch/ yarn production
+      # If tags:
+      #   - Copy the build to the root of 'gh-pages'.
+      - name: Tag push preparations
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          cp -a $GITHUB_WORKSPACE/www/* $GITHUB_WORKSPACE/gh-pages
 
-      - name: Check built docs
-        run: ls -lah $GITHUB_WORKSPACE/www
+      # If branch other than main:
+      #   - Create the 'branches' directory if it doesn't exist.
+      #   - Remove existing version of docs, if it exists.
+      #   - Move build into versioned folder.
+      - name: Build branch docs
+        run: |
+          if [ ! -d "$GITHUB_WORKSPACE/gh-pages$target_dir" ]; then mkdir -p $GITHUB_WORKSPACE/gh-pages$target_dir ; fi
+          rm -rf $GITHUB_WORKSPACE/gh-pages$target_dir$branch
+          mv $GITHUB_WORKSPACE/www/ $GITHUB_WORKSPACE/gh-pages$target_dir$branch
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout docs
-        uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          path: gh-pages
-
+      # https://github.com/JamesIves/github-pages-deploy-action#readme
       - name: Deploy docs 🚀
-        uses: JamesIves/github-pages-deploy-action@releases/v4
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages # Or your TARGET_BRANCH if needed
-          folder: www # The folder the action should deploy.
+          branch: ${{ env.TARGET_BRANCH }} # The branch the action should deploy to.
+          folder: gh-pages
     
     environment:
       name: github-pages
