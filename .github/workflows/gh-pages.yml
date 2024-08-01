@@ -67,9 +67,9 @@ jobs:
           echo "target_dir=/docs/" >> $GITHUB_ENV
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '18.x'
           cache: 'yarn'
 
       # Update NPM to 7 to fix https://github.com/actions/setup-node/issues/214.
