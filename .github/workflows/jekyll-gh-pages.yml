@@ -86,14 +86,12 @@ jobs:
           ref: gh-pages
           path: gh-pages
 
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy docs 🚀
+        uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages # Or your TARGET_BRANCH if needed
-          folder: www
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          folder: www # The folder the action should deploy.
     
     environment:
       name: github-pages
