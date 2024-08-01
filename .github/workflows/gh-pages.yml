@@ -74,8 +74,8 @@ jobs:
       - name: Enable corepack
         run: |
           corepack enable
-          corepack prepare yarn@1.22.22 --activate
-          yarn set version 1.22.22
+          corepack prepare yarn@3.7.0 --activate
+          yarn set version 3.7.0
 
       # Update NPM to 7 to fix https://github.com/actions/setup-node/issues/214.
 #      - run: npm install -g npm@7
