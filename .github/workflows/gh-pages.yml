@@ -66,16 +66,19 @@ jobs:
           echo "branch=${ref#refs/*/}" >> $GITHUB_ENV
           echo "target_dir=/docs/" >> $GITHUB_ENV
 
-      - name: Setup node
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '18'
+  
+      - name: Install dependencies
+        run: yarn install
 
       # Update NPM to 7 to fix https://github.com/actions/setup-node/issues/214.
 #      - run: npm install -g npm@7
 #      - run: npm -v
 
-      - run: yarn install --immutable
+      - run: yarn install --frozen-lockfile
       - run: BASE_URL=$target_dir$branch/ yarn production
       # Check to make sure that docs built into www.
       - run: ls -lah $GITHUB_WORKSPACE/www
