@@ -34,11 +34,11 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout 🛎️
         if: ${{ github.event_name != 'pull_request_target' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Checkout PR 🛎️
         if: ${{ github.event_name == 'pull_request_target' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -83,7 +83,7 @@ jobs:
 
       # https://github.com/actions/checkout#readme
       - name: Checkout docs
-        uses: actions/checkout@v4
+        uses: actions/checkout@4
         with:
           ref: gh-pages
           path: gh-pages
