@@ -1,4 +1,4 @@
-name: Remove stale branches from docs.
+name: Remove stale branches from doc.
 
 # Triggers on deletion of a ref type.
 on:
