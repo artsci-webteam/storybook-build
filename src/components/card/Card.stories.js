@@ -293,7 +293,7 @@ LinkedImage.args = {
 }
 
 export const ImageUsingResearchIcon = Template.bind({});
-ImageUsingIcon.args = {
+ImageUsingResearchIcon.args = {
   ...Default.args,
   centered: true,
   media_padded: true,
